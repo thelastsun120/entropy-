@@ -22,6 +22,7 @@ from PyQt5.QtWidgets import (
 from core.complexity_evaluator import evaluate_complexity
 from core.entropy_calculator import calculate_global_entropy, calculate_histogram, calculate_local_entropy
 from core.image_io import load_image_as_rgb_and_gray
+from core.llm_evaluator import evaluate_complexity_with_llm
 from core.noise_processor import add_gaussian_noise, add_salt_pepper_noise
 from ui.image_panel import ImagePanel
 from ui.plot_canvas import MplCanvas
@@ -79,6 +80,8 @@ class MainWindow(QMainWindow):
         self.show_hist_cb.setChecked(True)
         self.show_local_heatmap_cb = QCheckBox("显示局部熵热力图")
         self.show_local_heatmap_cb.setChecked(True)
+        self.use_llm_cb = QCheckBox("使用大语言模型评级")
+        self.use_llm_cb.setChecked(False)
 
         control_layout.addWidget(self.load_btn)
         control_layout.addWidget(self.global_btn)
@@ -101,6 +104,7 @@ class MainWindow(QMainWindow):
 
         control_layout.addWidget(self.show_hist_cb)
         control_layout.addWidget(self.show_local_heatmap_cb)
+        control_layout.addWidget(self.use_llm_cb)
         control_layout.addStretch(1)
 
         top_layout.addLayout(control_layout, 2)
@@ -175,6 +179,7 @@ class MainWindow(QMainWindow):
         self.result_text.append(f"全局熵：{self.global_entropy:.4f} bit")
         self.result_text.append(f"视觉复杂度评级：{level}")
         self.result_text.append(f"分析：{description}")
+        self._append_llm_rating()
         self.result_text.append("")
 
     def compute_local_entropy(self) -> None:
@@ -205,6 +210,7 @@ class MainWindow(QMainWindow):
             level, description = evaluate_complexity(self.global_entropy, local_mean, local_std)
             self.result_text.append(f"综合复杂度评级：{level}")
             self.result_text.append(f"分析：{description}")
+            self._append_llm_rating(local_mean, local_std)
         self.result_text.append("")
 
     def apply_noise(self) -> None:
@@ -246,7 +252,32 @@ class MainWindow(QMainWindow):
             self.result_text.append("分析：当前噪声处理使灰度分布更集中，熵值下降。")
         else:
             self.result_text.append("分析：噪声前后熵值基本不变。")
+        self._append_llm_rating(entropy_delta=delta)
         self.result_text.append("")
+
+    def _append_llm_rating(
+        self,
+        local_mean: float | None = None,
+        local_std: float | None = None,
+        entropy_delta: float | None = None,
+    ) -> None:
+        if not self.use_llm_cb.isChecked():
+            return
+        if self.global_entropy is None:
+            return
+
+        try:
+            result = evaluate_complexity_with_llm(
+                global_entropy=self.global_entropy,
+                local_entropy_mean=local_mean,
+                local_entropy_std=local_std,
+                noisy_entropy=self.noisy_entropy,
+                entropy_delta=entropy_delta,
+            )
+            self.result_text.append(f"LLM 复杂度评级（{result.model}）：{result.level}")
+            self.result_text.append(f"LLM 分析：{result.description}")
+        except RuntimeError as exc:
+            self.result_text.append(f"LLM 评级不可用：{exc}")
 
     def clear_results(self) -> None:
         self.original_image = None

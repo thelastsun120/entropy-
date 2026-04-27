@@ -39,6 +39,7 @@ python main.py
 8. 支持添加高斯噪声与椒盐噪声。
 9. 显示加噪后熵值与熵值变化，并给出自动分析结论。
 10. 支持导出文本分析报告。
+11. 可选启用大语言模型（LLM）进行复杂度评级与分析说明生成。
 
 ## 6. 信息熵公式说明
 
@@ -84,7 +85,24 @@ score = 0.7 \times global\_entropy + 0.3 \times local\_entropy\_mean
 - 熵值变化量
 - 自动解释（熵值上升通常对应不确定性增强，未必意味着有效信息增加）
 
-## 9. 项目截图占位说明
+## 9. 大语言模型（LLM）复杂度评级（可选）
+
+在界面中勾选“使用大语言模型评级”后，程序会把当前统计量（全局熵、局部熵统计、噪声前后熵变化）发送给 LLM，让模型返回：
+
+- 复杂度等级（低/中/高）
+- 简短中文解释
+
+使用前请配置环境变量：
+
+```bash
+export OPENAI_API_KEY=\"your_api_key\"
+export OPENAI_MODEL=\"gpt-4.1-mini\"   # 可选
+export OPENAI_BASE_URL=\"https://api.openai.com/v1\"  # 可选
+```
+
+未配置 API Key 时，程序会在结果框提示 LLM 不可用，不影响规则法分析。
+
+## 10. 项目截图占位说明
 
 可在此处补充课程展示截图：
 
@@ -105,6 +123,7 @@ image_entropy_analyzer/
 │   ├── __init__.py
 │   ├── image_io.py
 │   ├── entropy_calculator.py
+│   ├── llm_evaluator.py
 │   ├── noise_processor.py
 │   └── complexity_evaluator.py
 ├── ui/

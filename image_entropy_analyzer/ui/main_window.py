@@ -8,13 +8,19 @@ from PyQt5.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFileDialog,
+    QGridLayout,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
+    QFormLayout,
     QMainWindow,
     QMessageBox,
     QPushButton,
     QLineEdit,
+    QSizePolicy,
+    QSplitter,
     QSlider,
+    QTabWidget,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -48,15 +54,27 @@ class MainWindow(QMainWindow):
     def init_ui(self) -> None:
         central = QWidget()
         root_layout = QVBoxLayout(central)
+        root_layout.setContentsMargins(10, 10, 10, 10)
+        root_layout.setSpacing(10)
 
-        top_layout = QHBoxLayout()
+        top_splitter = QSplitter(Qt.Horizontal)
 
         self.original_panel = ImagePanel("原始图像")
         self.processed_panel = ImagePanel("灰度 / 加噪图像")
-        top_layout.addWidget(self.original_panel, 3)
-        top_layout.addWidget(self.processed_panel, 3)
+        self.original_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.processed_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        image_grid_widget = QWidget()
+        image_grid_layout = QGridLayout(image_grid_widget)
+        image_grid_layout.setContentsMargins(0, 0, 0, 0)
+        image_grid_layout.setHorizontalSpacing(8)
+        image_grid_layout.setVerticalSpacing(8)
+        image_grid_layout.addWidget(self.original_panel, 0, 0)
+        image_grid_layout.addWidget(self.processed_panel, 0, 1)
 
         control_layout = QVBoxLayout()
+        control_layout.setContentsMargins(0, 0, 0, 0)
+        control_layout.setSpacing(8)
 
         self.load_btn = QPushButton("上传图像")
         self.global_btn = QPushButton("计算全局熵")
@@ -87,48 +105,65 @@ class MainWindow(QMainWindow):
         self.api_key_input.setPlaceholderText("在此输入 API Key（可不走环境变量）")
         self.api_key_input.setEchoMode(QLineEdit.Password)
 
-        control_layout.addWidget(self.load_btn)
-        control_layout.addWidget(self.global_btn)
-        control_layout.addWidget(self.local_btn)
-        control_layout.addWidget(self.noise_btn)
-        control_layout.addWidget(self.clear_btn)
-        control_layout.addWidget(self.save_btn)
+        action_group = QGroupBox("操作")
+        action_layout = QVBoxLayout(action_group)
+        action_layout.addWidget(self.load_btn)
+        action_layout.addWidget(self.global_btn)
+        action_layout.addWidget(self.local_btn)
+        action_layout.addWidget(self.noise_btn)
+        action_layout.addWidget(self.clear_btn)
+        action_layout.addWidget(self.save_btn)
 
-        control_layout.addSpacing(10)
-        control_layout.addWidget(QLabel("噪声类型"))
-        control_layout.addWidget(self.noise_combo)
-        control_layout.addWidget(QLabel("局部熵半径"))
-        control_layout.addWidget(self.radius_combo)
-
-        noise_layout = QHBoxLayout()
+        param_group = QGroupBox("参数设置")
+        param_layout = QFormLayout(param_group)
+        param_layout.addRow("噪声类型", self.noise_combo)
+        param_layout.addRow("局部熵半径", self.radius_combo)
+        noise_widget = QWidget()
+        noise_layout = QHBoxLayout(noise_widget)
+        noise_layout.setContentsMargins(0, 0, 0, 0)
         noise_layout.addWidget(self.noise_slider)
         noise_layout.addWidget(self.noise_value_label)
-        control_layout.addWidget(QLabel("噪声强度"))
-        control_layout.addLayout(noise_layout)
+        param_layout.addRow("噪声强度", noise_widget)
 
-        control_layout.addWidget(self.show_hist_cb)
-        control_layout.addWidget(self.show_local_heatmap_cb)
-        control_layout.addWidget(self.use_llm_cb)
-        control_layout.addWidget(QLabel("LLM API Key"))
-        control_layout.addWidget(self.api_key_input)
+        display_group = QGroupBox("显示与模型")
+        display_layout = QVBoxLayout(display_group)
+        display_layout.addWidget(self.show_hist_cb)
+        display_layout.addWidget(self.show_local_heatmap_cb)
+        display_layout.addWidget(self.use_llm_cb)
+        display_layout.addWidget(QLabel("LLM API Key"))
+        display_layout.addWidget(self.api_key_input)
+
+        control_layout.addWidget(action_group)
+        control_layout.addWidget(param_group)
+        control_layout.addWidget(display_group)
         control_layout.addStretch(1)
 
-        top_layout.addLayout(control_layout, 2)
-        root_layout.addLayout(top_layout)
+        control_widget = QWidget()
+        control_widget.setLayout(control_layout)
+        control_widget.setMinimumWidth(300)
 
-        chart_layout = QHBoxLayout()
+        top_splitter.addWidget(image_grid_widget)
+        top_splitter.addWidget(control_widget)
+        top_splitter.setSizes([980, 360])
+        root_layout.addWidget(top_splitter, 7)
+
         self.hist_canvas = MplCanvas(width=4.5, height=3)
         self.entropy_canvas = MplCanvas(width=4.5, height=3)
         self.comparison_canvas = MplCanvas(width=4.5, height=3)
-        chart_layout.addWidget(self.hist_canvas)
-        chart_layout.addWidget(self.entropy_canvas)
-        chart_layout.addWidget(self.comparison_canvas)
-        root_layout.addLayout(chart_layout)
+        chart_tabs = QTabWidget()
+        chart_tabs.addTab(self.hist_canvas, "灰度直方图")
+        chart_tabs.addTab(self.entropy_canvas, "局部熵热力图")
+        chart_tabs.addTab(self.comparison_canvas, "熵值对比")
+        root_layout.addWidget(chart_tabs, 3)
 
         self.result_text = QTextEdit()
         self.result_text.setReadOnly(True)
         self.result_text.setPlaceholderText("分析结果将在这里显示...")
-        root_layout.addWidget(self.result_text, 2)
+        self.result_text.setMinimumHeight(180)
+        result_group = QGroupBox("分析结果")
+        result_layout = QVBoxLayout(result_group)
+        result_layout.addWidget(self.result_text)
+        root_layout.addWidget(result_group, 2)
 
         self.setCentralWidget(central)
 

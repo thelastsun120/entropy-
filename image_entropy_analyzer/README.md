@@ -92,6 +92,8 @@ score = 0.7 \times global\_entropy + 0.3 \times local\_entropy\_mean
 - 复杂度等级（低/中/高）
 - 简短中文解释
 
+你可以直接在程序右侧控制区的 **LLM API Key** 输入框中填写 Key（优先使用这个值）。如果输入框留空，程序才会回退读取环境变量。
+
 使用前请配置环境变量：
 
 ```bash

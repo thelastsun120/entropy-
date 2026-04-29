@@ -39,13 +39,16 @@ def evaluate_complexity_with_llm(
     local_entropy_std: float | None = None,
     noisy_entropy: float | None = None,
     entropy_delta: float | None = None,
+    api_key: str | None = None,
+    model_name: str | None = None,
+    base_url: str | None = None,
 ) -> LLMComplexityResult:
-    api_key = os.getenv("OPENAI_API_KEY")
-    model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
-    base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+    effective_api_key = api_key or os.getenv("OPENAI_API_KEY")
+    model = model_name or os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+    effective_base_url = base_url or os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
 
-    if not api_key:
-        raise RuntimeError("未配置 OPENAI_API_KEY，无法使用大语言模型评级。")
+    if not effective_api_key:
+        raise RuntimeError("未配置 API Key，无法使用大语言模型评级。")
 
     prompt = _build_prompt(global_entropy, local_entropy_mean, local_entropy_std, noisy_entropy, entropy_delta)
 
@@ -75,11 +78,11 @@ def evaluate_complexity_with_llm(
     }
 
     req = Request(
-        f"{base_url.rstrip('/')}/responses",
+        f"{effective_base_url.rstrip('/')}/responses",
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
+            "Authorization": f"Bearer {effective_api_key}",
         },
         method="POST",
     )

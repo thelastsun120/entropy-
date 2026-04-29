@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QPushButton,
+    QLineEdit,
     QSlider,
     QTextEdit,
     QVBoxLayout,
@@ -82,6 +83,9 @@ class MainWindow(QMainWindow):
         self.show_local_heatmap_cb.setChecked(True)
         self.use_llm_cb = QCheckBox("使用大语言模型评级")
         self.use_llm_cb.setChecked(False)
+        self.api_key_input = QLineEdit()
+        self.api_key_input.setPlaceholderText("在此输入 API Key（可不走环境变量）")
+        self.api_key_input.setEchoMode(QLineEdit.Password)
 
         control_layout.addWidget(self.load_btn)
         control_layout.addWidget(self.global_btn)
@@ -105,6 +109,8 @@ class MainWindow(QMainWindow):
         control_layout.addWidget(self.show_hist_cb)
         control_layout.addWidget(self.show_local_heatmap_cb)
         control_layout.addWidget(self.use_llm_cb)
+        control_layout.addWidget(QLabel("LLM API Key"))
+        control_layout.addWidget(self.api_key_input)
         control_layout.addStretch(1)
 
         top_layout.addLayout(control_layout, 2)
@@ -273,6 +279,7 @@ class MainWindow(QMainWindow):
                 local_entropy_std=local_std,
                 noisy_entropy=self.noisy_entropy,
                 entropy_delta=entropy_delta,
+                api_key=self.api_key_input.text().strip() or None,
             )
             self.result_text.append(f"LLM 复杂度评级（{result.model}）：{result.level}")
             self.result_text.append(f"LLM 分析：{result.description}")

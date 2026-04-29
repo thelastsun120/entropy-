@@ -20,7 +20,6 @@ from PyQt5.QtWidgets import (
     QSizePolicy,
     QSplitter,
     QSlider,
-    QTabWidget,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -147,14 +146,17 @@ class MainWindow(QMainWindow):
         top_splitter.setSizes([980, 360])
         root_layout.addWidget(top_splitter, 7)
 
-        self.hist_canvas = MplCanvas(width=4.5, height=3)
-        self.entropy_canvas = MplCanvas(width=4.5, height=3)
-        self.comparison_canvas = MplCanvas(width=4.5, height=3)
-        chart_tabs = QTabWidget()
-        chart_tabs.addTab(self.hist_canvas, "灰度直方图")
-        chart_tabs.addTab(self.entropy_canvas, "局部熵热力图")
-        chart_tabs.addTab(self.comparison_canvas, "熵值对比")
-        root_layout.addWidget(chart_tabs, 3)
+        self.hist_canvas = MplCanvas(width=4.2, height=2.8)
+        self.entropy_canvas = MplCanvas(width=4.2, height=2.8)
+        self.comparison_canvas = MplCanvas(width=4.2, height=2.8)
+        chart_group = QGroupBox("图表区（同屏显示）")
+        chart_layout = QHBoxLayout(chart_group)
+        chart_layout.setContentsMargins(8, 8, 8, 8)
+        chart_layout.setSpacing(8)
+        chart_layout.addWidget(self.hist_canvas)
+        chart_layout.addWidget(self.entropy_canvas)
+        chart_layout.addWidget(self.comparison_canvas)
+        root_layout.addWidget(chart_group, 3)
 
         self.result_text = QTextEdit()
         self.result_text.setReadOnly(True)
